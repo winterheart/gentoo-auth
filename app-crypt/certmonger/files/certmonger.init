@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+# Copyright 1999-2022 Gentoo Authors
+# Copyright 2022 Azamat H. Hackimov <azamat.hackimov@gmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+pidfile=/run/certmonger.pid
+command=/usr/sbin/certmonger
+command_args="-S -f -p ${pidfile} ${CERTMONGER_OPTS}"
+name="certmonger daemon"
+
+depend() {
+	use net
+	need dbus
+}

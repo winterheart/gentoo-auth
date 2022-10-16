@@ -12,7 +12,7 @@ SRC_URI="https://pagure.io/certmonger/archive/${P}/${PN}-${P}.tar.gz"
 LICENSE="GPL-3+"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="gmp nls xmlrpc"
+IUSE="gmp nls +xmlrpc"
 
 DEPEND="
 	gmp? ( dev-libs/gmp:=  )

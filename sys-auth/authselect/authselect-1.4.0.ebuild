@@ -19,7 +19,10 @@ DEPEND="
 	dev-libs/popt
 	sys-libs/libselinux
 "
-RDEPEND="${DEPEND}"
+RDEPEND="
+	${DEPEND}
+	sys-auth/oddjob
+"
 BDEPEND="
 	nls? ( sys-devel/gettext )
 	app-text/asciidoc

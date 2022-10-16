@@ -25,7 +25,7 @@ DEPEND="
 	dev-libs/popt
 	net-misc/curl[ssl]
 	net-dns/libidn2:=
-	net-nds/openldap
+	net-nds/openldap[sasl]
 	sys-apps/dbus
 	sys-apps/util-linux
 	sys-libs/talloc

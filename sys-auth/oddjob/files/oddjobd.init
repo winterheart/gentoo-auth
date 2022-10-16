@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+# Copyright 2022 Gentoo Authors
+# Copyright 2022 Azamat H. Hackimov <azamat.hackimov@gmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+name="oddjobd daemon"
+pidfile=/run/oddjobd.pid
+command=/usr/sbin/oddjobd
+command_args="-p ${pidfile} -t 300 ${ODDJOBD_OPTS}"
+
+extra_started_commands="reload"
+
+depend() {
+	need dbus
+}
+
+reload() {
+	ebegin "Reloading ${SVCNAME}"
+	start-stop-daemon --signal HUP --pidfile "${pidfile}"
+	eend $?
+}
+

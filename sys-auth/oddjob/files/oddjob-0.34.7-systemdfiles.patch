@@ -1,0 +1,143 @@
+From 56ff5a1e0409fbceb393a4165698b02e1328166d Mon Sep 17 00:00:00 2001
+From: "Azamat H. Hackimov" <azamat.hackimov@gmail.com>
+Date: Sun, 16 Oct 2022 13:50:31 +0300
+Subject: [PATCH] Allow to define systemd unit location for install
+
+This allows to compile package without installed systemd files by
+manually defining proper location. Calling
+`./configure --systemdsystemunitdir` without directory arg will try autodetect
+required directory by pkg-config invocation.
+
+See http://0pointer.de/public/systemd-man/daemon.html#Installing%20Systemd%20Service%20Files
+---
+ configure.ac        | 59 +++++++++++++++++----------------------------
+ scripts/Makefile.am |  3 +--
+ 2 files changed, 23 insertions(+), 39 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 0f6b497..1e220d1 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -11,14 +11,14 @@ AM_MAINTAINER_MODE
+ AC_DEFINE(_GNU_SOURCE,1,[Use GNU libc extensions.])
+ 
+ AC_PROG_LIBTOOL
++PKG_PROG_PKG_CONFIG
+ 
+ DBUS_PACKAGE=dbus-1
+ PKG_CHECK_MODULES(DBUS,$DBUS_PACKAGE)
+ PKG_CHECK_MODULES(XML,libxml-2.0)
+ 
+ AC_MSG_CHECKING([D-BUS version])
+-DBUS_VERSION=`pkg-config --modversion $DBUS_PACKAGE`
+-DBUS_PREFIX=`pkg-config --modversion $DBUS_PACKAGE`
++DBUS_VERSION=$($PKG_CONFIG --modversion $DBUS_PACKAGE)
+ DBUS_MAJOR_VERSION=`echo $DBUS_VERSION | cut -f1 -d.`
+ DBUS_MINOR_VERSION=`echo $DBUS_VERSION | cut -f2 -d.`
+ DBUS_MICRO_VERSION=`echo $DBUS_VERSION | cut -f3 -d.`
+@@ -31,7 +31,7 @@ fi
+ if test x$DBUS_MICRO_VERSION = x ; then
+ 	DBUS_MICRO_VERSION=0
+ fi
+-AC_MSG_RESULT([pkg-config reports $DBUS_VERSION, treating as ${DBUS_MAJOR_VERSION}.${DBUS_MINOR_VERSION}.${DBUS_MICRO_VERSION}])
++AC_MSG_RESULT([$PKG_CONFIG reports $DBUS_VERSION, treating as ${DBUS_MAJOR_VERSION}.${DBUS_MINOR_VERSION}.${DBUS_MICRO_VERSION}])
+ AC_DEFINE_UNQUOTED(ODDJOB_DBUS_MAJOR_VERSION,$DBUS_MAJOR_VERSION,[Define to the major version of D-BUS with which oddjob is being compiled.])
+ AC_DEFINE_UNQUOTED(ODDJOB_DBUS_MINOR_VERSION,$DBUS_MINOR_VERSION,[Define to the minor version of D-BUS with which oddjob is being compiled.])
+ AC_DEFINE_UNQUOTED(ODDJOB_DBUS_MICRO_VERSION,$DBUS_MICRO_VERSION,[Define to the micro version of D-BUS with which oddjob is being compiled.])
+@@ -74,21 +74,6 @@ DEFAULT_RECONNECT_TIMEOUT=30
+ AC_DEFINE_UNQUOTED(DEFAULT_RECONNECT_TIMEOUT,$DEFAULT_RECONNECT_TIMEOUT,[Define to the default amount of time which oddjobd will pause between attempts to reconnect to the system message bus after being disconnected for any reason.])
+ AC_SUBST(DEFAULT_RECONNECT_TIMEOUT)
+ 
+-AC_ARG_ENABLE(systemd,
+-AS_HELP_STRING([--enable-systemd],[install unit file for systemd]),
+-SYSTEMD=$enableval,
+-SYSTEMD=no)
+-
+-AC_SUBST(SYSTEMD)
+-AM_CONDITIONAL(SYSTEMD,test x$SYSTEMD != xno)
+-if test x$SYSTEMD = xyes ; then
+-	SYSTEMDSYSTEMUNITDIR=`pkg-config --variable=systemdsystemunitdir systemd 2> /dev/null`
+-	AC_MSG_RESULT(will install systemd unit file)
+-else
+-	AC_MSG_RESULT(will install sysv init script)
+-fi
+-AC_SUBST(SYSTEMDSYSTEMUNITDIR)
+-
+ AC_ARG_ENABLE(sample,
+ AS_HELP_STRING(--enable-sample,[Build and install a sample service.]),
+ sample=$withval,
+@@ -365,40 +350,40 @@ currentgid=`id -g`
+ AC_SUBST(currentgid)
+ AC_PATH_PROGS(PATH_PWD,pwd,pwd)
+ 
+-AC_ARG_ENABLE(systemd,
+-AS_HELP_STRING(--enable-systemd,[Install systemd unit files]),
+-systemd=$enableval
+-if test x$systemd = xyes ; then
+-	SYSTEMDSYSTEMUNITDIR=`pkg-config --variable=systemdsystemunitdir systemd`
+-fi
+-,
+-if pkg-config systemd 2> /dev/null ; then
+-	SYSTEMDSYSTEMUNITDIR=`pkg-config --variable=systemdsystemunitdir systemd 2> /dev/null`
+-	systemd=yes
+-else
+-	systemd=no
+-fi
+-)
++AC_ARG_WITH([systemdsystemunitdir],
++	[AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Install systemd unit files to DIR])],,
++	[with_systemdsystemunitdir=auto])
++AS_IF([test "x$with_systemdsystemunitdir" = "xyes" -o "x$with_systemdsystemunitdir" = "xauto"], [
++	def_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)
++
++	AS_IF([test "x$def_systemdsystemunitdir" = "x"],
++	[AS_IF([test "x$with_systemdsystemunitdir" = "xyes"],
++		[AC_MSG_ERROR([systemd support requested but pkg-config unable to query systemd package])])
++		with_systemdsystemunitdir=no],
++	[with_systemdsystemunitdir="$def_systemdsystemunitdir"])])
++AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
++	[AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])])
++AM_CONDITIONAL([SYSTEMD], [test "x$with_systemdsystemunitdir" != "xno"])
+ 
+ AC_ARG_ENABLE(sysvinit,
+ AS_HELP_STRING(--enable-sysvinit,[Install sysvinit unit files]),
+ sysvinit=$enableval,
+-if test x$systemd = xno ; then
++if test x$with_systemdsystemunitdir = xno ; then
+ 	sysvinit=yes
+ else
+ 	sysvinit=no
+ fi
+ )
+-if test x$systemd = xyes ; then
++if test x$with_systemdsystemunitdir != xno ; then
+ 	AC_MSG_RESULT([installing systemd unit file])
+-	if test "x$SYSTEMDSYSTEMUNITDIR" = x ; then
++	if test "x$systemdsystemunitdir" = x ; then
+ 		AC_MSG_ERROR([error locating systemd system unit directory])
+ 	fi
+-	AC_SUBST(SYSTEMDSYSTEMUNITDIR)
++	AC_SUBST(systemdsystemunitdir)
+ else
+ 	AC_MSG_RESULT([not installing systemd unit file])
+ fi
+-AM_CONDITIONAL(SYSTEMD,test x$systemd = xyes)
++
+ if test x$sysvinit = xyes ; then
+ 	AC_MSG_RESULT([installing sysv init script])
+ else
+diff --git a/scripts/Makefile.am b/scripts/Makefile.am
+index 86d50be..eb315ce 100644
+--- a/scripts/Makefile.am
++++ b/scripts/Makefile.am
+@@ -4,6 +4,5 @@ initdir = $(sysconfdir)/rc.d/init.d
+ init_SCRIPTS = oddjobd
+ endif
+ if SYSTEMD
+-unitdir = @SYSTEMDSYSTEMUNITDIR@
+-unit_DATA = oddjobd.service
++systemdsystemunit_DATA = oddjobd.service
+ endif
+-- 
+2.37.3
+

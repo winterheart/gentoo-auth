@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit autotools tmpfiles
+inherit autotools tmpfiles systemd
 
 DESCRIPTION="Certificate status monitor and PKI enrollment client"
 HOMEPAGE="https://pagure.io/certmonger"
@@ -12,11 +12,10 @@ SRC_URI="https://pagure.io/certmonger/archive/${P}/${PN}-${P}.tar.gz"
 LICENSE="GPL-3+"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="gmp nls systemd xmlrpc"
+IUSE="gmp nls xmlrpc"
 
 DEPEND="
 	gmp? ( dev-libs/gmp:=  )
-	systemd? ( sys-apps/systemd )
 	xmlrpc? ( dev-libs/xmlrpc-c:=[curl] )
 	app-crypt/mit-krb5
 	dev-libs/jansson:=
@@ -45,7 +44,7 @@ S="${WORKDIR}/${PN}-${P}"
 src_prepare() {
 	default
 	# Respect LDFLAGS
-	sed -i -e '/LDFLAGS =/d' src/Makefile.am || die "sed failed"
+	sed -i -e "/LDFLAGS =/d" src/Makefile.am || die "sed failed"
 	eautoreconf
 }
 
@@ -56,7 +55,7 @@ src_configure() {
 		--with-tmpdir=/run/certmonger
 		--enable-pie
 		--enable-now
-		$(use_enable systemd)
+		--enable-systemd
 		$(use_with gmp)
 		$(use_with xmlrpc)
 	)
@@ -67,6 +66,7 @@ src_install() {
 	emake DESTDIR="${D}" install
 	newinitd "${FILESDIR}/${PN}.init" ${PN}
 	newconfd "${FILESDIR}/${PN}.conf" ${PN}
+	systemd_dounit systemd/certmonger.service
 	keepdir /var/lib/certmonger/{cas,local,requests}
 }
 

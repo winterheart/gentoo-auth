@@ -1,0 +1,546 @@
+From 59001f5d8dbc8e7a2ccec8ae538c190a383f5e4d Mon Sep 17 00:00:00 2001
+From: "Azamat H. Hackimov" <azamat.hackimov@gmail.com>
+Date: Sat, 15 Oct 2022 14:24:03 +0300
+Subject: [PATCH] Implement Gentoo OpenRC specific platform classes
+
+---
+ ipaplatform/gentoo_openrc/__init__.py  |   8 ++
+ ipaplatform/gentoo_openrc/constants.py |  33 +++++
+ ipaplatform/gentoo_openrc/paths.py     |  89 ++++++++++++
+ ipaplatform/gentoo_openrc/services.py  | 173 ++++++++++++++++++++++++
+ ipaplatform/gentoo_openrc/tasks.py     | 179 +++++++++++++++++++++++++
+ ipaplatform/setup.py                   |   1 +
+ 6 files changed, 483 insertions(+)
+ create mode 100644 ipaplatform/gentoo_openrc/__init__.py
+ create mode 100644 ipaplatform/gentoo_openrc/constants.py
+ create mode 100644 ipaplatform/gentoo_openrc/paths.py
+ create mode 100644 ipaplatform/gentoo_openrc/services.py
+ create mode 100644 ipaplatform/gentoo_openrc/tasks.py
+
+diff --git a/ipaplatform/gentoo_openrc/__init__.py b/ipaplatform/gentoo_openrc/__init__.py
+new file mode 100644
+index 000000000..d79078385
+--- /dev/null
++++ b/ipaplatform/gentoo_openrc/__init__.py
+@@ -0,0 +1,8 @@
++#
++# Copyright (C) 2022  FreeIPA Contributors see COPYING for license
++#
++
++"""
++This module contains Gentoo OpenRC specific platform files.
++"""
++NAME = "gentoo_openrc"
+diff --git a/ipaplatform/gentoo_openrc/constants.py b/ipaplatform/gentoo_openrc/constants.py
+new file mode 100644
+index 000000000..5c71828e8
+--- /dev/null
++++ b/ipaplatform/gentoo_openrc/constants.py
+@@ -0,0 +1,33 @@
++#
++# Copyright (C) 2022  FreeIPA Contributors see COPYING for license
++#
++
++"""
++This Gentoo family platform module exports platform dependant constants.
++"""
++
++# Fallback to default path definitions
++from __future__ import absolute_import
++
++from ipaplatform.base.constants import BaseConstantsNamespace, User, Group
++
++__all__ = ("constants", "User", "Group")
++
++
++class GentooConstantsNamespace(BaseConstantsNamespace):
++    HTTPD_USER = User("apache")
++    HTTPD_GROUP = Group("apache")
++    NAMED_USER = User("bind")
++    NAMED_GROUP = Group("bind")
++    NAMED_DATA_DIR = ""
++    NAMED_ZONE_COMMENT = "//"
++    # ntpd init variable used for daemon options
++    NTPD_OPTS_VAR = "NTPD_OPTS"
++    # quote used for daemon options
++    NTPD_OPTS_QUOTE = "\'"
++    ODS_USER = User("opendnssec")
++    ODS_GROUP = Group("opendnssec")
++    SECURE_NFS_VAR = "NEED_GSSD"
++
++
++constants = GentooConstantsNamespace()
+diff --git a/ipaplatform/gentoo_openrc/paths.py b/ipaplatform/gentoo_openrc/paths.py
+new file mode 100644
+index 000000000..2f6a27398
+--- /dev/null
++++ b/ipaplatform/gentoo_openrc/paths.py
+@@ -0,0 +1,89 @@
++#
++# Copyright (C) 2022  FreeIPA Contributors see COPYING for license
++#
++
++"""
++This Gentoo base platform module exports default filesystem paths as common
++in Gentoo-based systems.
++"""
++
++# Fallback to default path definitions
++from __future__ import absolute_import
++
++from ipaplatform.base.paths import BasePathNamespace
++import sysconfig
++
++MULTIARCH = sysconfig.get_config_var('MULTIARCH')
++
++
++class GentooPathNamespace(BasePathNamespace):
++    AUTHSELECT = '/usr/bin/authselect'
++    ETC_HTTPD_DIR = "/etc/apache2"
++    HTTPD_ALIAS_DIR = "/etc/apache2/alias"
++    GSSAPI_SESSION_KEY = "/etc/apache2/alias/ipasession.key"
++    OLD_KRA_AGENT_PEM = "/etc/apache2/alias/kra-agent.pem"
++    HTTPD_CONF_D_DIR = "/etc/apache2/conf.d/"
++    HTTPD_IPA_KDCPROXY_CONF_SYMLINK = "/etc/apache2/conf.d/ipa-kdc-proxy.conf"
++    HTTPD_IPA_PKI_PROXY_CONF = "/etc/apache2/conf.d/ipa-pki-proxy.conf"
++    HTTPD_IPA_REWRITE_CONF = "/etc/apache2/conf.d/ipa-rewrite.conf"
++    HTTPD_IPA_CONF = "/etc/apache2/conf.d/ipa.conf"
++    HTTPD_NSS_CONF = "/etc/apache2/conf.d/nss.conf"
++    HTTPD_SSL_CONF = "/etc/apache2/conf.d/ssl.conf"
++    HTTPD_SSL_SITE_CONF = "/etc/apache2/conf.d/ssl.conf"
++    OLD_IPA_KEYTAB = "/etc/apache2/conf/ipa.keytab"
++    HTTPD_PASSWORD_CONF = "/etc/apache2/conf/password.conf"
++    LDAP_CONF = "/etc/openldap/ldap.conf"
++    LIBNSS_LDAP_CONF = "/etc/ldap.conf"
++    NAMED_CONF = "/etc/bind/named.conf"
++    NAMED_CONF_BAK = "/etc/bind/named.conf.ipa-backup"
++    NAMED_CUSTOM_CONF = "/etc/named/bind/ipa-ext.conf"
++    NAMED_LOGGING_OPTIONS_CONF = "/etc/named/bind/ipa-logging-ext.conf"
++    NAMED_CUSTOM_OPTIONS_CONF = "/etc/named/bind/ipa-options-ext.conf"
++    NAMED_VAR_DIR = "/var/bind"
++    NAMED_KEYTAB = "/etc/bind/bind.keytab"
++    NAMED_RFC1912_ZONES = "/etc/bind.rfc1912.zones"
++    NAMED_ROOT_KEY = "/etc/bind/named.root.key"
++    NAMED_MANAGED_KEYS_DIR = "/var/bind/dyn"
++
++    # Gentoo's p11-kit does not use ipa.p11-kit, so the file is provided
++    # for information only.
++    IPA_P11_KIT = "/usr/local/share/ca-certificates/ipa.p11-kit"
++    CA_CERTIFICATES_BUNDLE_PEM = "/usr/local/share/ca-certificates/ipa-ca.crt"
++    CA_CERTIFICATES_DIR = "/usr/local/share/ca-certificates/ipa-ca"
++
++    SYSCONF_NETWORK = "/etc/conf.d/net"
++    SYSCONF_HOSTNAME = "/etc/conf.d/hostname"
++    # FIXME: what to do with SYSCONFIG variables?
++    ETC_SYSCONFIG_DIR = "/etc/default"
++    ETC_SYSCONFIG_AUTHCONFIG = "/etc/default/authconfig"
++    SYSCONFIG_AUTOFS = "/etc/default/autofs"
++    SYSCONFIG_DIRSRV = "/etc/default/dirsrv"
++    SYSCONFIG_DIRSRV_INSTANCE = "/etc/default/dirsrv-%s"
++    SYSCONFIG_DIRSRV_SYSTEMD = "/etc/default/dirsrv.systemd"
++    SYSCONFIG_IPA_DNSKEYSYNCD = "/etc/default/ipa-dnskeysyncd"
++    SYSCONFIG_IPA_ODS_EXPORTER = "/etc/default/ipa-ods-exporter"
++    SYSCONFIG_HTTPD = "/etc/default/httpd"
++    SYSCONFIG_KRB5KDC_DIR = "/etc/sysconfig/krb5kdc"
++    SYSCONFIG_NAMED = "/etc/sysconfig/named"
++    SYSCONFIG_NFS = "/etc/sysconfig/nfs"
++    SYSCONFIG_NTPD = "/etc/sysconfig/ntpd"
++    SYSCONFIG_ODS = "/etc/sysconfig/ods"
++    SYSCONFIG_PKI = "/etc/sysconfig/pki"
++    SYSCONFIG_PKI_TOMCAT = "/etc/sysconfig/pki-tomcat"
++    SYSCONFIG_PKI_TOMCAT_PKI_TOMCAT_DIR = "/etc/sysconfig/pki/tomcat/pki-tomcat"
++
++    OPENSSL_DIR = "/etc/ssl"
++    OPENSSL_CERTS_DIR = "/etc/ssl/certs"
++    OPENSSL_PRIVATE_DIR = "/etc/ssl/private"
++
++    UPDATE_CA_TRUST = "/usr/sbin/update-ca-certificates"
++    BIND_LDAP_DNS_IPA_WORKDIR = "/var/bind/dyndb-ldap/ipa/"
++    BIND_LDAP_DNS_ZONE_WORKDIR = "/var/bind/dyndb-ldap/ipa/master/"
++    PAM_KRB5_SO = "/lib/security/pam_krb5.so"
++    PAM_KRB5_SO_64 = "/lib64/security/pam_krb5.so"
++
++    # Own vars
++    SBIN_RC_SERVICE = "/sbin/rc-service"
++    SBIN_RC_UPDATE = "/sbin/rc-update"
++
++paths = GentooPathNamespace()
+diff --git a/ipaplatform/gentoo_openrc/services.py b/ipaplatform/gentoo_openrc/services.py
+new file mode 100644
+index 000000000..8eaa4fb35
+--- /dev/null
++++ b/ipaplatform/gentoo_openrc/services.py
+@@ -0,0 +1,173 @@
++#
++# Copyright (C) 2022 FreeIPA Contributors see COPYING for license
++#
++
++"""
++Contains Debian-specific service class implementations.
++"""
++
++from __future__ import absolute_import
++
++from ipaplatform.base import services as base_services
++from ipaplatform.redhat import services as redhat_services
++from ipapython import ipautil
++from ipaplatform.paths import paths
++
++# For beginning just map names as is
++gentoo_openrc_system_units = dict((x, x) for x in base_services.wellknownservices)
++
++# For beginning just remap names to add .service
++# As more services will migrate to systemd, unit names will deviate and
++# mapping will be kept in this dictionary
++gentoo_openrc_system_units['rpcidmapd'] = 'rpc.idmapd'
++gentoo_openrc_system_units['httpd'] = 'apache2'
++gentoo_openrc_system_units['named-regular'] = 'named'
++gentoo_openrc_system_units['named-pkcs11'] = 'bind9-pkcs11'
++
++
++def parse_variables(text, separator=None):
++    """
++    Parses 'rc-update show default' output and returns a list of values
++    Arguments: text -- 'systemctl show' output as string
++               separator -- optional (defaults to None), what separates
++                            the key/value pairs in the text
++    """
++    def splitter(x, sep=None):
++        if len(x) > 1:
++            y = x.split(sep)
++            return y[0].strip()
++        return None
++
++    return list(splitter(x, sep=separator) for x in text.split("\n"))
++
++
++class GentooOpenrcService(base_services.PlatformService):
++    """
++    OpenRC service classes that implement Gentoo OpenRC family-specific behaviour
++    """
++
++    def wait_for_open_ports(self, instance_name=""):
++        ports = None
++        if instance_name in base_services.wellknownports:
++            ports = base_services.wellknownports[instance_name]
++        else:
++            if self.service_name in base_services.wellknownports:
++                ports = base_services.wellknownports[self.service_name]
++        if ports:
++            ipautil.wait_for_open_ports('localhost', ports, self.api.env.startup_timeout)
++
++    def start(self, instance_name="", capture_output=True, wait=True, update_service_list=True):
++        ipautil.run([paths.SBIN_RC_SERVICE, self.service_name, "start", "-q"], capture_output=capture_output)
++        if wait and self.is_running(instance_name):
++            self.wait_for_open_ports(instance_name)
++        super(GentooOpenrcService, self).start(instance_name)
++
++    def stop(self, instance_name="", capture_output=True, update_service_list=True):
++        ipautil.run([paths.SBIN_RC_SERVICE, self.service_name, "stop", "-q"], capture_output=capture_output)
++        super(GentooOpenrcService, self).stop(instance_name)
++
++    def restart(self, instance_name='', capture_output=True, wait=True):
++        ipautil.run([paths.SBIN_RC_SERVICE, self.service_name, "restart", "-q"], capture_output=capture_output)
++        if wait and self.is_running(instance_name):
++            self.wait_for_open_ports(instance_name)
++
++    def is_running(self, instance_name="", wait=True):
++        ret = False
++        try:
++            result = ipautil.run([paths.SBIN_RC_SERVICE, self.service_name, "status"],
++                                 capture_output=True)
++            sout = result.output
++            if sout.find("status: started") >= 0:
++                ret = True
++        except ipautil.CalledProcessError:
++            ret = False
++        return ret
++
++    def is_installed(self):
++        try:
++            result = ipautil.run([paths.SBIN_RC_SERVICE, "-e", self.service_name], capture_output=True)
++            if result == 0:
++                return True
++            return False
++        except ipautil.CalledProcessError:
++            return False
++
++    def is_enabled(self, instance_name=""):
++        try:
++            result = ipautil.run([paths.SBIN_RC_UPDATE, "show", "default"], capture_output=True)
++            sout = parse_variables(result.output, "|")
++            if self.service_name not in sout:
++                return False
++        except ipautil.CalledProcessError:
++            return False
++        return True
++
++    def enable(self, instance_name=""):
++        try:
++            ipautil.run([paths.SBIN_RC_UPDATE, "add", self.service_name])
++        except ipautil.CalledProcessError:
++            pass
++
++    def disable(self, instance_name=""):
++        try:
++            ipautil.run([paths.SBIN_RC_UPDATE, "delete", self.service_name])
++        except ipautil.CalledProcessError:
++            pass
++
++    def install(self, instance_name=""):
++        return True
++
++    def remove(self, instance_name=""):
++        return True
++
++
++class GentooNoService(base_services.PlatformService):
++    """
++    For services which have no Gentoo counterpart
++    """
++
++    def start(self, instance_name="", capture_output=True, wait=True, update_service_list=True):
++        return True
++
++    def stop(self, instance_name="", capture_output=True, wait=True, update_service_list=True):
++        return True
++
++    def restart(self, instance_name="", capture_output=True, wait=True, update_service_list=True):
++        return True
++
++    def disable(self, instance_name="", capture_output=True, wait=True, update_service_list=True):
++        return True
++
++
++def gentoo_service_class_factory(name, api=None):
++    """
++    Function that constructs proper Gentoo-specific server classes for services of specified name
++    """
++    if name == 'domainname':
++        return GentooNoService(name, api)
++    return GentooOpenrcService(name, api)
++
++
++# Magicdict containing GentooService instances.
++
++class GentooServices(base_services.KnownServices):
++    def __init__(self):
++        # pylint: disable=ipa-forbidden-import
++        import ipalib  # FixMe: break import cycle
++        # pylint: enable=ipa-forbidden-import
++        services = dict()
++        for s in base_services.wellknownservices:
++            services[s] = self.service_class_factory(s, ipalib.api)
++        # Call base class constructor. This will lock services to read-only
++        super(GentooServices, self).__init__(services)
++
++    @staticmethod
++    def service_class_factory(name, api=None):
++        return gentoo_service_class_factory(name, api)
++
++
++# Objects below are expected to be exported by platform module
++
++timedate_services = base_services.timedate_services
++service = gentoo_service_class_factory
++knownservices = GentooServices()
+diff --git a/ipaplatform/gentoo_openrc/tasks.py b/ipaplatform/gentoo_openrc/tasks.py
+new file mode 100644
+index 000000000..f04f44b44
+--- /dev/null
++++ b/ipaplatform/gentoo_openrc/tasks.py
+@@ -0,0 +1,179 @@
++#
++# Copyright (C) 2022  FreeIPA Contributors see COPYING for license
++#
++
++from __future__ import absolute_import
++
++import logging
++import os
++import shutil
++from pathlib import Path
++
++from ipaplatform.redhat.tasks import RedHatTaskNamespace
++from ipaplatform.paths import paths
++
++from ipapython import ipautil
++from ipapython.dn import DN
++
++logger = logging.getLogger(__name__)
++
++
++class GentooTaskNamespace(RedHatTaskNamespace):
++
++    def modify_pam_to_use_krb5(self, statestore):
++        # Nothing to do
++        pass
++
++    def set_hostname(self, hostname):
++        try:
++            with open(paths.SYSCONF_HOSTNAME, "r") as f:
++                content = [
++                    line for line in f
++                    if not line.strip().startswith("hostname")
++                ]
++        except IOError:
++            content = []
++        content.append("hostname=\"{}\"".format(hostname))
++
++        with open(paths.SYSCONF_HOSTNAME, "w") as f:
++            f.writelines(content)
++
++        ipautil.run([paths.SBIN_RC_SERVICE, "hostname", "restart", "-q"])
++
++    def set_nisdomain(self, nisdomain):
++        try:
++            with open(paths.SYSCONF_NETWORK, 'r') as f:
++                content = [
++                    line for line in f
++                    if not line.strip().startswith('nis_domain')
++                ]
++        except IOError:
++            content = []
++
++        content.append("nis_domain_lo={}\n".format(nisdomain))
++
++        with open(paths.SYSCONF_NETWORK, 'w') as f:
++            f.writelines(content)
++
++    def detect_container(self):
++        # Cannot detect container mode, ignoring
++        return None
++
++    def platform_insert_ca_certs(self, ca_certs):
++        # ca-certificates does not use this file, so it doesn't matter if we
++        # fail to create it.
++        try:
++            self.write_p11kit_certs(paths.IPA_P11_KIT, ca_certs),
++        except Exception:
++            logger.exception("""\
++Could not create p11-kit anchor trust file. On Debian this file is not
++used by ca-certificates and is provided for information only.\
++""")
++
++        return any([
++            self.write_ca_certificates_dir(paths.CA_CERTIFICATES_DIR, ca_certs),
++            self.remove_ca_certificates_bundle(paths.CA_CERTIFICATES_BUNDLE_PEM),
++        ])
++
++    def write_ca_certificates_dir(self, directory, ca_certs):
++        # pylint: disable=ipa-forbidden-import
++        from ipalib import x509  # FixMe: break import cycle
++        # pylint: enable=ipa-forbidden-import
++
++        path = Path(directory)
++        try:
++            path.mkdir(mode=0o755, exist_ok=True)
++        except Exception:
++            logger.error("Could not create %s", path)
++            raise
++
++        for cert, nickname, trusted, _ext_key_usage in ca_certs:
++            if not trusted:
++                continue
++
++            # I'm not handling errors here because they have already
++            # been checked by the time we get here
++            subject = DN(cert.subject)
++            issuer = DN(cert.issuer)
++
++            # Construct the certificate filename using the Subject DN so that
++            # the user can see which CA a particular file is for, and include
++            # the serial number to disambiguate clashes where a subordinate CA
++            # had a new certificate issued.
++            #
++            # Strictly speaking, certificates are uniquely identified by (Issuer
++            # DN, Serial Number). Do we care about the possibility of a clash
++            # where a subordinate CA had two certificates issued by different
++            # CAs who used the same serial number?)
++            filename = f'{subject.ldap_text()} {cert.serial_number}.crt'
++
++            # pylint: disable=old-division
++            cert_path = path / filename
++            # pylint: enable=old-division
++            try:
++                f = open(cert_path, 'w')
++            except Exception:
++                logger.error("Could not create %s", cert_path)
++                raise
++
++            with f:
++                try:
++                    os.fchmod(f.fileno(), 0o644)
++                except Exception:
++                    logger.error("Could not set mode of %s", cert_path)
++                    raise
++
++                try:
++                    f.write(f"""\
++This file was created by IPA. Do not edit.
++
++Description: {nickname}
++Subject: {subject.ldap_text()}
++Issuer: {issuer.ldap_text()}
++Serial Number (dec): {cert.serial_number}
++Serial Number (hex): {cert.serial_number:#x}
++
++""")
++                    pem = cert.public_bytes(x509.Encoding.PEM).decode('ascii')
++                    f.write(pem)
++                except Exception:
++                    logger.error("Could not write to %s", cert_path)
++                    raise
++
++        return True
++
++    def platform_remove_ca_certs(self):
++        return any([
++            self.remove_ca_certificates_dir(paths.CA_CERTIFICATES_DIR),
++            self.remove_ca_certificates_bundle(paths.IPA_P11_KIT),
++            self.remove_ca_certificates_bundle(paths.CA_CERTIFICATES_BUNDLE_PEM),
++        ])
++
++    def remove_ca_certificates_dir(self, directory):
++        path = Path(paths.CA_CERTIFICATES_DIR)
++        if not path.exists():
++            return False
++
++        try:
++            shutil.rmtree(path)
++        except Exception:
++            logger.error("Could not remove %s", path)
++            raise
++
++        return True
++
++    def remove_ca_certificates_bundle(self, filename):
++        path = Path(filename)
++        if not path.is_file():
++            return False
++
++        try:
++            path.unlink()
++        except Exception:
++            logger.error("Could not remove %s", path)
++            raise
++
++        return True
++
++
++tasks = GentooTaskNamespace()
+diff --git a/ipaplatform/setup.py b/ipaplatform/setup.py
+index 0d4bb380f..1193b3c01 100644
+--- a/ipaplatform/setup.py
++++ b/ipaplatform/setup.py
+@@ -37,6 +37,7 @@ if __name__ == '__main__':
+             "ipaplatform.debian",
+             "ipaplatform.fedora",
+             "ipaplatform.fedora_container",
++            "ipaplatform.gentoo_openrc",
+             "ipaplatform.redhat",
+             "ipaplatform.rhel",
+             "ipaplatform.rhel_container",
+-- 
+2.37.3
+

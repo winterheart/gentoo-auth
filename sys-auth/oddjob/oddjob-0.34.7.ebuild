@@ -12,6 +12,9 @@ SRC_URI="https://releases.pagure.org/${PN}/${P}.tar.gz"
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
+IUSE="test"
+
+RESTRICT="!test? ( test )"
 
 DEPEND="
 	sys-apps/dbus

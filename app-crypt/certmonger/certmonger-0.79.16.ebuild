@@ -12,7 +12,9 @@ SRC_URI="https://pagure.io/certmonger/archive/${P}/${PN}-${P}.tar.gz"
 LICENSE="GPL-3+"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="gmp nls +xmlrpc"
+IUSE="gmp nls test +xmlrpc"
+
+RESTRICT="!test? ( test )"
 
 DEPEND="
 	gmp? ( dev-libs/gmp:=  )
@@ -36,6 +38,10 @@ RDEPEND="${DEPEND}
 "
 BDEPEND="
 	nls? ( sys-devel/gettext )
+	test? (
+		app-text/dos2unix
+		sys-apps/diffutils
+	)
 	virtual/pkgconfig
 "
 
@@ -45,6 +51,12 @@ src_prepare() {
 	default
 	# Respect LDFLAGS
 	sed -i -e "/LDFLAGS =/d" src/Makefile.am || die "sed failed"
+	# 008 - Requires /etc/pki/nssdb which does not exists in Gentoo
+	# 028 - Expected to fail
+	sed -i \
+		-e "/008-certread \\\/d" \
+		-e "/028-dbus \\\/d" \
+		tests/Makefile.am || die "sed failed"
 	eautoreconf
 }
 

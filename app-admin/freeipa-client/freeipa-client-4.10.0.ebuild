@@ -14,7 +14,6 @@ SRC_URI="https://releases.pagure.org/freeipa/freeipa-${PV}.tar.gz"
 LICENSE="GPL-3+"
 SLOT="0"
 KEYWORDS="~amd64"
-
 IUSE="nls +xmlrpc"
 
 DEPEND="
@@ -66,8 +65,6 @@ S="${WORKDIR}/freeipa-${PV}"
 
 src_prepare() {
 	default
-	# Don't install tests
-	echo "" > ipatests/Makefile.am
 	# Don't rely on systemd.pc
 	sed -i -e '/PKG_CHECK_EXISTS(\[systemd\]/d' configure.ac || die
 	# Fix bashcomp installation
@@ -88,6 +85,7 @@ src_configure() {
 		--with-systemdtmpfilesdir="${EPREFIX}/usr/lib/tmpfiles.d"
 		--with-systemdsystemunitdir="$(systemd_get_systemunitdir)"
 		--with-ipaplatform="gentoo_openrc"
+		--without-ipatests
 		$(use_enable nls)
 		$(use_with xmlrpc ipa-join-xml)
 	)

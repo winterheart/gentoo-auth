@@ -12,7 +12,9 @@ SRC_URI="https://github.com/authselect/authselect/archive/refs/tags/${PV}.tar.gz
 LICENSE="GPL-3+"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="nls"
+IUSE="nls test"
+
+RESTRICT="!test? ( test )"
 
 DEPEND="
 	nls? ( virtual/libintl )

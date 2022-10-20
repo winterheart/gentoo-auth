@@ -29,6 +29,7 @@ BDEPEND="
 	nls? ( sys-devel/gettext )
 	app-text/asciidoc
 	app-text/po4a
+	dev-libs/libpwquality[pam]
 	virtual/pkgconfig
 "
 

@@ -1,4 +1,4 @@
-From 7942409e86e700d61877c24bc18fc9704425450a Mon Sep 17 00:00:00 2001
+From b372fc498010c2e3ffc9149b6c5b82836f73c775 Mon Sep 17 00:00:00 2001
 From: "Azamat H. Hackimov" <azamat.hackimov@gmail.com>
 Date: Sat, 15 Oct 2022 14:24:03 +0300
 Subject: [PATCH] Implement Gentoo OpenRC specific platform classes
@@ -8,9 +8,9 @@ Subject: [PATCH] Implement Gentoo OpenRC specific platform classes
  ipaplatform/gentoo_openrc/constants.py |  33 +++++
  ipaplatform/gentoo_openrc/paths.py     |  89 ++++++++++++
  ipaplatform/gentoo_openrc/services.py  | 173 ++++++++++++++++++++++++
- ipaplatform/gentoo_openrc/tasks.py     | 179 +++++++++++++++++++++++++
+ ipaplatform/gentoo_openrc/tasks.py     | 180 +++++++++++++++++++++++++
  ipaplatform/setup.py                   |   1 +
- 6 files changed, 483 insertions(+)
+ 6 files changed, 484 insertions(+)
  create mode 100644 ipaplatform/gentoo_openrc/__init__.py
  create mode 100644 ipaplatform/gentoo_openrc/constants.py
  create mode 100644 ipaplatform/gentoo_openrc/paths.py
@@ -346,10 +346,10 @@ index 000000000..8eaa4fb35
 +knownservices = GentooServices()
 diff --git a/ipaplatform/gentoo_openrc/tasks.py b/ipaplatform/gentoo_openrc/tasks.py
 new file mode 100644
-index 000000000..a6bc8096f
+index 000000000..0f13140da
 --- /dev/null
 +++ b/ipaplatform/gentoo_openrc/tasks.py
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,180 @@
 +#
 +# Copyright (C) 2022  FreeIPA Contributors see COPYING for license
 +#
@@ -412,6 +412,8 @@ index 000000000..a6bc8096f
 +        return None
 +
 +    def platform_insert_ca_certs(self, ca_certs):
++        os.makedirs(paths.CA_CERTIFICATES_DIR)
++        os.makedirs(paths.IPA_P11_KIT)
 +        # ca-certificates does not use this file, so it doesn't matter if we
 +        # fail to create it.
 +        try:
@@ -421,7 +423,6 @@ index 000000000..a6bc8096f
 +Could not create p11-kit anchor trust file. On Debian this file is not
 +used by ca-certificates and is provided for information only.\
 +""")
-+        os.makedirs(paths.CA_CERTIFICATES_DIR)
 +        return any([
 +            self.write_ca_certificates_dir(paths.CA_CERTIFICATES_DIR, ca_certs),
 +            self.remove_ca_certificates_bundle(paths.CA_CERTIFICATES_BUNDLE_PEM),

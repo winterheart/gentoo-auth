@@ -1,4 +1,4 @@
-From 59001f5d8dbc8e7a2ccec8ae538c190a383f5e4d Mon Sep 17 00:00:00 2001
+From 7942409e86e700d61877c24bc18fc9704425450a Mon Sep 17 00:00:00 2001
 From: "Azamat H. Hackimov" <azamat.hackimov@gmail.com>
 Date: Sat, 15 Oct 2022 14:24:03 +0300
 Subject: [PATCH] Implement Gentoo OpenRC specific platform classes
@@ -346,7 +346,7 @@ index 000000000..8eaa4fb35
 +knownservices = GentooServices()
 diff --git a/ipaplatform/gentoo_openrc/tasks.py b/ipaplatform/gentoo_openrc/tasks.py
 new file mode 100644
-index 000000000..f04f44b44
+index 000000000..a6bc8096f
 --- /dev/null
 +++ b/ipaplatform/gentoo_openrc/tasks.py
 @@ -0,0 +1,179 @@
@@ -421,7 +421,7 @@ index 000000000..f04f44b44
 +Could not create p11-kit anchor trust file. On Debian this file is not
 +used by ca-certificates and is provided for information only.\
 +""")
-+
++        os.makedirs(paths.CA_CERTIFICATES_DIR)
 +        return any([
 +            self.write_ca_certificates_dir(paths.CA_CERTIFICATES_DIR, ca_certs),
 +            self.remove_ca_certificates_bundle(paths.CA_CERTIFICATES_BUNDLE_PEM),
@@ -542,5 +542,5 @@ index 0d4bb380f..1193b3c01 100644
              "ipaplatform.rhel",
              "ipaplatform.rhel_container",
 -- 
-2.37.3
+2.37.4
 

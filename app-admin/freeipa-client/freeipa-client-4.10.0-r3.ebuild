@@ -3,13 +3,15 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_{11..13} )
 
 inherit autotools bash-completion-r1 python-single-r1 systemd
 
 DESCRIPTION="FreeIPA management client"
 HOMEPAGE="https://www.freeipa.org/"
 SRC_URI="https://releases.pagure.org/freeipa/freeipa-${PV}.tar.gz"
+
+S="${WORKDIR}/freeipa-${PV}"
 
 LICENSE="GPL-3+"
 SLOT="0"
@@ -48,7 +50,7 @@ RDEPEND="
 	dev-python/python-augeas
 	dev-python/python-ldap[sasl,ssl]
 	sys-auth/authselect
-	sys-auth/sssd[python,samba,sudo]
+	sys-auth/sssd[python,samba]
 	virtual/libintl
 "
 BDEPEND="
@@ -61,8 +63,6 @@ PATCHES=(
 	"${FILESDIR}/${P}-gentoo_openrc-platform.patch"
 	"${FILESDIR}/${P}-cryptography.patch"
 )
-
-S="${WORKDIR}/freeipa-${PV}"
 
 src_prepare() {
 	default

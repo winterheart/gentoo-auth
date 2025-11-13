@@ -51,7 +51,7 @@ RDEPEND="
 	dev-python/python-augeas
 	dev-python/python-ldap[sasl,ssl]
 	sys-auth/authselect
-	sys-auth/sssd[python]
+	sys-auth/sssd[python,samba]
 	virtual/libintl
 "
 BDEPEND="
